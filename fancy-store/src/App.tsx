@@ -12,6 +12,7 @@ import { OrderTrackingView } from './components/OrderTrackingView';
 import { ProductDetailView } from './components/ProductDetailView';
 import { ShopView } from './components/ShopView';
 import { CategoryItem, Order, Product } from './types/store';
+import { SEED_CATEGORIES, SEED_PRODUCTS } from './server/seedProducts.ts';
 
 const CART_STORAGE_KEY = 'rfs_cart_v1';
 const WISHLIST_STORAGE_KEY = 'rfs_wishlist_v1';
@@ -61,11 +62,19 @@ export default function App() {
         fetch('/api/categories'),
         fetch('/api/products'),
       ]);
+      const catIsJson = catRes.ok && catRes.headers.get('content-type')?.includes('application/json');
+      const prodIsJson = prodRes.ok && prodRes.headers.get('content-type')?.includes('application/json');
+      if (!catIsJson || !prodIsJson) {
+        setCategories((prev) => (prev.length > 0 ? prev : SEED_CATEGORIES));
+        setProducts((prev) => (prev.length > 0 ? prev : SEED_PRODUCTS));
+        return;
+      }
       const [catData, prodData] = await Promise.all([catRes.json(), prodRes.json()]);
       if (Array.isArray(catData.categories)) setCategories(catData.categories);
       if (Array.isArray(prodData.products)) setProducts(prodData.products);
     } catch {
-      // Keep current catalog if transient network error occurs
+      setCategories((prev) => (prev.length > 0 ? prev : SEED_CATEGORIES));
+      setProducts((prev) => (prev.length > 0 ? prev : SEED_PRODUCTS));
     } finally {
       setLoading(false);
     }
